@@ -1,0 +1,261 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\geometry{margin=1in}
+
+\title{Appendix A: Formalization of the Conditional Boundedness Switching Policy}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{A.1 Overview}
+
+Let a language model generate a response $y$ to an input prompt $x$.  
+We define a control layer that selects a response mode $m$ before and during generation.
+
+The switching policy governs mode selection such that:
+
+\begin{itemize}
+    \item Expansion occurs under explicit request and low risk.
+    \item Contraction occurs under ambiguity, elevated impact, authority pressure, or boundary proximity.
+    \item Termination occurs when marginal value collapses.
+    \item Hard prohibitions override all switching decisions.
+\end{itemize}
+
+\section*{A.2 State Variables}
+
+At each turn $t$, define the latent state vector:
+
+\[
+S_t = (A_t, E_t, H_t, P_t, T_t, B_t, C_t)
+\]
+
+Where:
+
+\begin{itemize}
+    \item $A_t \in [0,1]$: Ambiguity estimate
+    \item $E_t \in [0,1]$: Explicit expansion signal
+    \item $H_t \in [0,1]$: Impact estimate (stakes + irreversibility)
+    \item $P_t \in [0,1]$: Authority pressure
+    \item $T_t \in \{0,1\}$: Tool surface access
+    \item $B_t \in [0,1]$: Boundary pressure index (rolling)
+    \item $C_t \in [0,1]$: Confidence in state estimation
+\end{itemize}
+
+All variables are behavioral estimates derived from interaction structure and must not encode psychological inference.
+
+\section*{A.3 Objective Structure}
+
+The system optimizes:
+
+\[
+\max \; U(y \mid x)
+\]
+
+Subject to:
+
+\[
+\text{HarmSafe}(y, x) = \text{true}
+\]
+
+With regularization:
+
+\[
+U_{\text{effective}} = U - \lambda \cdot S_{\text{instability}}
+\]
+
+Where:
+
+\begin{itemize}
+    \item $U$ = calibrated usefulness
+    \item $\lambda$ = stability weighting parameter
+    \item $S_{\text{instability}}$ penalizes scope creep, authority projection, and redundancy
+\end{itemize}
+
+Harm constraints (deployment membrane rules) are evaluated prior to switching.
+
+\section*{A.4 Ladder Modes}
+
+Define ordered response modes:
+
+\[
+M = \{m_1, m_2, m_3, m_4, m_5, m_6\}
+\]
+
+Where:
+
+\begin{itemize}
+    \item $m_1$: Direct Fulfillment
+    \item $m_2$: Clarification
+    \item $m_3$: Structural Framing
+    \item $m_4$: Enumerated Options
+    \item $m_5$: Template
+    \item $m_6$: Refusal + Redirect
+\end{itemize}
+
+Modes are partially ordered by contraction.
+
+\section*{A.5 Pre-Generation Mode Selection}
+
+Given contraction thresholds $\tau_A, \tau_H, \tau_P, \tau_B$, the mode is selected as follows:
+
+\begin{enumerate}
+    \item If membrane violation $\rightarrow m_6$
+    \item If $B_t \ge \tau_B^{high} \rightarrow m_6$
+    \item Else if $H_t \ge \tau_H^{template} \rightarrow m_5$
+    \item Else if $H_t \ge \tau_H^{structure} \rightarrow m_3$
+    \item Else if $A_t \ge \tau_A^{clarify} \rightarrow m_2$
+    \item Else if $P_t \ge \tau_P^{structure} \rightarrow m_3$
+    \item Else if $E_t \ge \tau_E^{expand}$ and $A_t \le \tau_A^{expand} \rightarrow m_4$
+    \item Else $\rightarrow m_1$
+\end{enumerate}
+
+\section*{A.6 Hysteresis}
+
+Each variable uses dual thresholds:
+
+\[
+\text{Enter contraction if } A_t \ge \tau_A^{enter}
+\]
+\[
+\text{Exit contraction only if } A_t \le \tau_A^{exit}
+\]
+
+Where:
+
+\[
+\tau_A^{exit} < \tau_A^{enter}
+\]
+
+Equivalent dual-threshold structure applies to $H_t, P_t, B_t$.
+
+Upward transitions are allowed only when exit thresholds are crossed.
+
+\section*{A.7 Boundary Pressure Update}
+
+The rolling boundary index is defined as:
+
+\[
+B_{t+1} = \text{clip}\left(B_t + \alpha I_{boundary} - \beta I_{safe}, 0, 1\right)
+\]
+
+Where:
+
+\begin{itemize}
+    \item $I_{boundary} = 1$ if boundary-adjacent behavior detected
+    \item $I_{safe} = 1$ if safe interaction turn
+    \item $\alpha > \beta > 0$
+\end{itemize}
+
+Boundary pressure modulates allowable expansion:
+
+\[
+\text{If } B_t \ge \tau_B^{mid}, \quad m \notin \{m_1, m_4\}
+\]
+
+\section*{A.8 Checkpoint Reassessment}
+
+Let generation occur in segments:
+
+\[
+y = (y_1, y_2, \dots, y_k)
+\]
+
+At each checkpoint $i$:
+
+\begin{enumerate}
+    \item Recompute $S_t$
+    \item Apply hysteresis rules
+    \item Shift mode downward if required
+    \item Shift upward only if re-qualification satisfied
+\end{enumerate}
+
+Mid-segment switching is disallowed.
+
+\section*{A.9 Marginal Novelty Collapse}
+
+Define novelty density:
+
+\[
+N_i = \frac{\text{new conceptual units in segment } i}{\text{segment length}}
+\]
+
+Stopping occurs if:
+
+\begin{itemize}
+    \item Structural completion condition satisfied, or
+    \item $N_i + N_{i-1} \le \epsilon$, or
+    \item Redundancy index $R_i \ge \rho$
+\end{itemize}
+
+Upon triggering, expansion terminates cleanly.
+
+\section*{A.10 Authority Modulation}
+
+If $P_t \ge \tau_P^{structure}$:
+
+\[
+m \notin \{m_1\}
+\]
+
+The system shifts to criteria, tradeoff, or framework responses.
+
+\section*{A.11 Basin Depth Metric}
+
+Given perturbation set $\mathcal{P}$:
+
+\[
+D_{basin} = \frac{1}{|\mathcal{P}|} \sum_{p \in \mathcal{P}} \text{StabilityScore}(p)
+\]
+
+Deep basin condition:
+
+\[
+D_{basin} \ge \theta
+\]
+
+\section*{A.12 Layered Architecture}
+
+\[
+\text{System} = \text{Training Gradients} + \text{Switching Policy} + \text{Deployment Membrane} + \text{Governance}
+\]
+
+Training shapes the attractor.  
+Membrane enforces constraints.  
+Governance stabilizes incentives.
+
+\section*{A.13 Non-Goals}
+
+The switching policy does not:
+
+\begin{itemize}
+    \item Infer user intent
+    \item Modify hard constraints
+    \item Optimize engagement
+    \item Permit authority projection
+    \item Expand without qualification
+\end{itemize}
+
+\section*{A.14 Summary}
+
+Conditional boundedness is formalized as:
+
+\begin{itemize}
+    \item A state-dependent switching function
+    \item With hysteretic thresholds
+    \item With boundary pressure memory
+    \item With explicit stopping criteria
+    \item Under hard harm constraints
+    \item Evaluated by perturbation-based basin depth
+\end{itemize}
+
+This provides a control-system interpretation of language model stability that is measurable, tunable, and auditable.
+
+\end{document}

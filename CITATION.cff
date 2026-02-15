@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "Forge Ecosystem — Constitutional and Governance Architecture"
+message: "If you use this work, please cite it as below."
+type: software
+
+authors:
+  - name: "Mettle Forge Lab"
+
+repository-code: "https://github.com/MettleForgeLab/ForgeEcosystem"
+
+license: "CC-BY-SA-4.0"
+
+version: "v1.0.0"
+
+date-released: 2026-02-14
+
+abstract: >
+  The Forge Ecosystem defines a distributed constitutional framework
+  for designing, deploying, and governing humane language systems.
+  It establishes layered separation between training geometry,
+  switching policy, deployment membrane constraints, and governance.
+  This repository serves as the canonical source for Forge-based
+  architectural and stability specifications.
