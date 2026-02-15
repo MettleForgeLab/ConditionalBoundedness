@@ -38,6 +38,13 @@ It complements:
 
 It is a control-system architecture for governable language model behavior.
 
+## Layer Clarification
+
+Some summaries describe a tri-layer system (training gradients, deployment membrane, governance).  
+Here, switching is treated as a distinct control layer for clarity.
+
+This is a presentation distinction, not an additional architectural tier.
+
 ---
 
 Published in public.
